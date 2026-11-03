@@ -125,3 +125,31 @@ SELECT a.*, COALESCE(s.is_bookmarked,0) AS is_bookmarked, COALESCE(s.is_read,0) 
        COALESCE(s.read_progress,0) AS read_progress, s.last_opened_at AS last_opened_at
 FROM articles a LEFT JOIN user_article_state s ON s.article_id = a.id
 """
+
+# ---- mascot ------------------------------------------------------------------
+# "Nooky", a pixel-art bookworm. One char per pixel, drawn two pixel rows per text row with half-blocks.
+MASCOT_PALETTE = {
+    "g": "#8be28b",  # body
+    "d": "#4fb36b",  # mouth / shade
+    "k": "#23263a",  # eyes
+    "w": "#ffffff",  # eye shine
+    "p": "#ff9db5",  # cheeks
+    "c": "#f6ecd2",  # book pages
+    "b": "#c9803c",  # book cover
+}
+MASCOT_PIXELS = [
+    "..g......g..",
+    "...g....g...",
+    "..gggggggg..",
+    ".gggggggggg.",
+    ".ggkwggkwgg.",
+    ".ggkkggkkgg.",
+    ".gpggggggpg.",
+    "..gggddggg..",
+    ".gggggggggg.",
+    "..gggggggg..",
+    "bccccccccccb",
+    "bbbbbbbbbbbb",
+]
+MASCOT_TITLE = "nook"
+MASCOT_TAGLINE = "your cozy reading nook"

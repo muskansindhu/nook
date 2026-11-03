@@ -4,13 +4,13 @@ from rich.text import Text
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen, Screen
 from textual.widgets import Footer, Header, Input, Markdown, OptionList, Static
 from textual.widgets.option_list import Option
 
-from nook.constants import TUI_PAGE_SIZE, TUI_VIEWS
-from nook.fmt import flags, meta_line
+from nook.constants import MASCOT_TAGLINE, MASCOT_TITLE, TUI_PAGE_SIZE, TUI_VIEWS
+from nook.fmt import flags, meta_line, render_mascot
 from nook.service import Nook
 
 
@@ -166,7 +166,9 @@ class HelpScreen(ModalScreen):
 class NookApp(App, ListNav):
     TITLE = "nook"
     CSS = """
-    #views { width: 24; border-right: solid $primary-darken-2; }
+    #sidebar { width: 24; border-right: solid $primary-darken-2; }
+    #brand { height: auto; width: 100%; content-align: center middle; text-align: center; padding: 1 0 0 0; }
+    #views { height: 1fr; }
     #articles { width: 1fr; }
     #meta { padding: 0 2; background: $boost; height: auto; }
     #body { padding: 0 2; }
@@ -193,7 +195,9 @@ class NookApp(App, ListNav):
     def compose(self) -> ComposeResult:
         yield Header()
         with Horizontal():
-            yield OptionList(*[Option(label, id=vid) for vid, label in TUI_VIEWS], id="views")
+            with Vertical(id="sidebar"):
+                yield Static(Text.assemble(render_mascot(), (MASCOT_TITLE, "bold #8be28b"), "\n", (MASCOT_TAGLINE, "dim")), id="brand")
+                yield OptionList(*[Option(label, id=vid) for vid, label in TUI_VIEWS], id="views")
             yield OptionList(id="articles")
         yield Footer()
 
