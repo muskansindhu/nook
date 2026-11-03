@@ -137,6 +137,13 @@ class Database:
                 (status, error, now(), aid),
             )
 
+    def set_description_if_empty(self, aid: int, text: str) -> None:
+        with self.conn:
+            self.conn.execute(
+                "UPDATE articles SET description=? WHERE id=? AND (description IS NULL OR description='')", (text, aid)
+            )
+            self._reindex(aid)
+
     def _reindex(self, aid: int) -> None:
         if not self.has_fts:
             return

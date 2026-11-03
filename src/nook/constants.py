@@ -57,6 +57,15 @@ DOCTOR_URLS = {
     "dailydev": f"{DAILYDEV_BASE}/skill.md",
 }
 
+# ---- reader fallback messages (when no article body could be cached) --------
+FALLBACK_MESSAGES = {
+    "unavailable": "nook can't read this page in the terminal: it has no readable text (it likely needs JavaScript).",
+    "blocked": "The site blocked automated access, so the article couldn't be downloaded.",
+    "failed": "Downloading the article failed. Press R (or run `nook cache download ID`) to retry.",
+    "pending": "This article hasn't been downloaded yet.",
+}
+DISCUSSION_METADATA_KEYS = ("hn_url", "discussion", "comments_url")  # where adapters stash a discussion link
+
 # ---- URL / content sanitizing ------------------------------------------------
 TRACKING_PARAMS = {"fbclid", "gclid", "mc_cid", "mc_eid", "ref", "ref_src", "igshid"}
 CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f-\x9f]")

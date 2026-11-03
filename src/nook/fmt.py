@@ -8,7 +8,7 @@ from rich.markup import escape
 from rich.table import Table
 from rich.text import Text
 
-from nook.constants import MASCOT_PALETTE, MASCOT_PIXELS, SOURCE_LABELS
+from nook.constants import DISCUSSION_METADATA_KEYS, FALLBACK_MESSAGES, MASCOT_PALETTE, MASCOT_PIXELS, SOURCE_LABELS
 
 
 
@@ -76,3 +76,22 @@ def render_mascot() -> Text:
                 out.append(" ")
         out.append("\n")
     return out
+
+
+def discussion_url(a: sqlite3.Row) -> str | None:
+    meta = json.loads(a["source_metadata_json"] or "{}")
+    return next((meta[k] for k in DISCUSSION_METADATA_KEYS if meta.get(k)), None)
+
+
+def fallback_markdown(a: sqlite3.Row) -> str:
+    """What to show when there is no cached body: summary, why, and where else to read it."""
+    parts = []
+    if a["description"]:
+        parts.append(a["description"])
+    parts.append(f"*{FALLBACK_MESSAGES.get(a['content_status'], FALLBACK_MESSAGES['failed'])}*")
+    if a["content_error"] and a["content_status"] == "failed":
+        parts.append(f"Reason: {a['content_error']}")
+    parts.append(f"Original: {a['canonical_url']}")
+    if d := discussion_url(a):
+        parts.append(f"Discussion: {d}")
+    return "\n\n".join(parts)

@@ -104,6 +104,8 @@ class Nook:
             return "available", None
         except ExtractionError as e:
             self.db.mark_content_failed(aid, e.status, str(e))
+            if e.summary:
+                self.db.set_description_if_empty(aid, e.summary)
             return e.status, str(e)
 
     async def download_many(self, ids: list[int], force: bool = False) -> list[tuple[str, bool]]:

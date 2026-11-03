@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from nook.adapters.base import get_json, make_client
 from nook.constants import HN_BASE, HN_FEEDS, HN_FETCH_CONCURRENCY, HN_OVERFETCH
+from nook.extraction import html_fragment_to_markdown
 from nook.models import ArticleDraft, FeedOptions, SourceError
 from nook.urls import normalize_url
 
@@ -45,7 +46,7 @@ class HackerNews:
         return ArticleDraft(
             source_id="hn", external_id=str(it["id"]), canonical_url=normalize_url(url),
             title=it["title"], author=it.get("by"),
-            description=(it.get("text") if not it.get("url") else None),
+            content_markdown=html_fragment_to_markdown(it["text"]) if not it.get("url") and it.get("text") else None,
             published_at=datetime.fromtimestamp(ts, timezone.utc) if ts else None,
             score=it.get("score"), comment_count=it.get("descendants"),
             tags=[kind] if kind in ("ask", "show") else [],

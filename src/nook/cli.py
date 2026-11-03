@@ -12,7 +12,7 @@ from rich.markup import escape
 from nook import __version__
 from nook.config import ConfigError, config_path, load_config
 from nook.constants import DEFAULT_TOML, DOCTOR_TIMEOUT_S, DOCTOR_URLS, SOURCE_IDS, SYNC_UNBOUNDED_LIMIT
-from nook.fmt import article_table
+from nook.fmt import article_table, fallback_markdown
 from nook.service import Nook
 
 app = typer.Typer(
@@ -237,10 +237,7 @@ def read(
     if a["content_markdown"]:
         out.print(a["content_text"] if plain else Markdown(a["content_markdown"]))
     else:
-        if a["description"]:
-            out.print(escape(a["description"]) + "\n")
-        out.print(f"[yellow]Full text unavailable ({a['content_status']}): {escape(a['content_error'] or 'unknown')}[/yellow]")
-        out.print(f"Retry with `nook cache download {article_id}`.")
+        out.print(Markdown(fallback_markdown(a)))
     if not no_mark_read and n.cfg.auto_mark_read:
         n.db.touch_opened(article_id)
         n.db.set_read(article_id, True)

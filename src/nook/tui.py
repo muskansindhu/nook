@@ -13,7 +13,7 @@ from textual.widgets.option_list import Option
 from nook.constants import (
     MASCOT_TAGLINE, MASCOT_TITLE, THEME_COLORS, THEME_NAME, THEME_VARIABLES, TUI_PAGE_SIZE, TUI_VIEWS,
 )
-from nook.fmt import flags, meta_line, render_mascot
+from nook.fmt import fallback_markdown, flags, meta_line, render_mascot
 from nook.service import Nook
 
 
@@ -75,7 +75,10 @@ class ReaderScreen(Screen):
     def render_article(self) -> None:
         a = self.nook.db.get(self.aid)
         self.sub_title = a["title"]
-        cached = "cached offline" if a["content_markdown"] else "not downloaded"
+        cached = (
+            "cached offline" if a["content_markdown"]
+            else "no readable text" if a["content_status"] == "unavailable" else "not downloaded"
+        )
         star = "★ " if a["is_bookmarked"] else ""
         self.query_one("#meta", Static).update(
             Text.assemble((f"{star}{a['title']}\n", "bold"), (f"{meta_line(a)} · {cached}\n{a['canonical_url']}", "dim"))
@@ -83,8 +86,7 @@ class ReaderScreen(Screen):
         if a["content_markdown"]:
             md = a["content_markdown"]
         else:
-            md = (a["description"] or "") + f"\n\n*Full text {a['content_status']}" + (
-                f": {a['content_error']}" if a["content_error"] else "") + ". Press **R** to retry.*"
+            md = fallback_markdown(a)
         self.query_one("#md", Markdown).update(md)
 
     @work(exclusive=True)
