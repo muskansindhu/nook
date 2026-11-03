@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from nook.adapters.base import get_json, make_client, parse_dt
+from nook.constants import DAILYDEV_BASE, DAILYDEV_MAX_PAGE
 from nook.models import ArticleDraft, FeedOptions, SourceError
 from nook.urls import normalize_url
 
-BASE = "https://api.daily.dev/public/v1"
 
 
 class DailyDev:
@@ -21,10 +21,10 @@ class DailyDev:
         cursor = None
         async with make_client(headers={"Authorization": f"Bearer {self._token}"}) as client:
             while len(out) < options.limit:
-                params = {"limit": min(50, options.limit - len(out))}
+                params = {"limit": min(DAILYDEV_MAX_PAGE, options.limit - len(out))}
                 if cursor:
                     params["cursor"] = cursor
-                data = await get_json(client, f"{BASE}/feeds/foryou", params=params)
+                data = await get_json(client, f"{DAILYDEV_BASE}/feeds/foryou", params=params)
                 if not isinstance(data, dict) or not isinstance(data.get("data"), list):
                     raise SourceError("parse_error", "unexpected daily.dev response shape")
                 for p in data["data"]:

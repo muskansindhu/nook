@@ -9,14 +9,10 @@ from textual.screen import ModalScreen, Screen
 from textual.widgets import Footer, Header, Input, Markdown, OptionList, Static
 from textual.widgets.option_list import Option
 
-from nook.fmt import SRC_LABEL, flags, meta_line
+from nook.constants import TUI_PAGE_SIZE, TUI_VIEWS
+from nook.fmt import flags, meta_line
 from nook.service import Nook
 
-VIEWS = [
-    ("all", "All articles"), ("hn", "Hacker News"), ("tdd", "The Daily Diff"), ("devto", "DEV Community"),
-    ("dailydev", "daily.dev"), ("bookmarks", "★ Bookmarks"), ("unread", "Unread"), ("history", "Recently read"),
-]
-PAGE = 200  # bounded list, never render an unbounded feed
 
 
 def article_option(a) -> Option:
@@ -197,7 +193,7 @@ class NookApp(App, ListNav):
     def compose(self) -> ComposeResult:
         yield Header()
         with Horizontal():
-            yield OptionList(*[Option(label, id=vid) for vid, label in VIEWS], id="views")
+            yield OptionList(*[Option(label, id=vid) for vid, label in TUI_VIEWS], id="views")
             yield OptionList(id="articles")
         yield Footer()
 
@@ -220,9 +216,9 @@ class NookApp(App, ListNav):
         idx = ol.highlighted or 0
         v, db = self.view, self.nook.db
         if v in ("bookmarks", "unread", "history"):
-            rows = db.list(None, PAGE, bookmarked=v == "bookmarks", unread=v == "unread", history=v == "history", dedupe=False)
+            rows = db.list(None, TUI_PAGE_SIZE, bookmarked=v == "bookmarks", unread=v == "unread", history=v == "history", dedupe=False)
         else:
-            rows = db.list(None if v == "all" else v, PAGE)
+            rows = db.list(None if v == "all" else v, TUI_PAGE_SIZE)
         ol.clear_options()
         ol.add_options([article_option(a) for a in rows] or [Option("Nothing here yet.", disabled=True)])
         if rows:

@@ -10,8 +10,9 @@ from rich.markdown import Markdown
 from rich.markup import escape
 
 from nook import __version__
-from nook.config import DEFAULT_TOML, SOURCE_IDS, ConfigError, config_path, load_config
-from nook.fmt import article_table, tags
+from nook.config import ConfigError, config_path, load_config
+from nook.constants import DEFAULT_TOML, DOCTOR_TIMEOUT_S, DOCTOR_URLS, SOURCE_IDS, SYNC_UNBOUNDED_LIMIT
+from nook.fmt import article_table
 from nook.service import Nook
 
 app = typer.Typer(
@@ -91,7 +92,8 @@ def config_show():
     out.print(f"config file : {config_path()} ({'exists' if config_path().exists() else 'missing, using defaults'})")
     out.print(f"database    : {c.db_path}")
     out.print(f"limit       : {c.default_limit}  auto-download/sync: {c.max_auto_download}")
-    out.print(f"sources     : {', '.join(f'{k}={'on' if v else 'off'}' for k, v in c.enabled.items())}")
+    states = ", ".join(f"{k}={'on' if v else 'off'}" for k, v in c.enabled.items())
+    out.print(f"sources     : {states}")
     out.print(f"daily.dev   : token {'set' if c.daily_dev_token else 'NOT set'}")
 
 
@@ -151,11 +153,9 @@ def doctor():
         raise typer.Exit(1)
     if n.cfg.enabled.get("dailydev") and not n.cfg.daily_dev_token:
         out.print("[yellow]![/yellow] daily.dev enabled but DAILY_DEV_TOKEN is not set")
-    urls = {"hn": "https://hacker-news.firebaseio.com/v0/maxitem.json", "tdd": "https://tdd.cat/json",
-            "devto": "https://dev.to/api/articles?per_page=1", "dailydev": "https://api.daily.dev/public/v1/skill.md"}
     for sid in n.adapters:
         try:
-            r = httpx.get(urls[sid], timeout=8, headers={"Accept": "application/vnd.forem.api-v1+json"})
+            r = httpx.get(DOCTOR_URLS[sid], timeout=DOCTOR_TIMEOUT_S, headers={"Accept": "application/vnd.forem.api-v1+json"})
             out.print(f"[green]✓[/green] {sid}: reachable (HTTP {r.status_code})")
         except httpx.HTTPError as e:
             ok = False
@@ -317,7 +317,7 @@ def cache_download(article_id: int, force: bool = typer.Option(False, "--force")
 @cache_app.command("retry-failed")
 def cache_retry():
     n = _nook()
-    ids = [r["id"] for r in n.db.list(None, 10_000, missing_content=True, dedupe=False)
+    ids = [r["id"] for r in n.db.list(None, SYNC_UNBOUNDED_LIMIT, missing_content=True, dedupe=False)
            if r["content_status"] in ("failed", "pending")]
     res = asyncio.run(n.download_many(ids))
     out.print(f"{sum(ok for _, ok in res)} of {len(ids)} downloaded")

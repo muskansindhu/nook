@@ -4,12 +4,9 @@ import asyncio
 from datetime import datetime, timezone
 
 from nook.adapters.base import get_json, make_client
+from nook.constants import HN_BASE, HN_FEEDS, HN_FETCH_CONCURRENCY, HN_OVERFETCH
 from nook.models import ArticleDraft, FeedOptions, SourceError
 from nook.urls import normalize_url
-
-BASE = "https://hacker-news.firebaseio.com/v0"
-FEEDS = {"top": "topstories", "new": "newstories", "best": "beststories",
-         "ask": "askstories", "show": "showstories"}
 
 
 class HackerNews:
@@ -18,23 +15,23 @@ class HackerNews:
 
     async def fetch_feed(self, options: FeedOptions) -> list[ArticleDraft]:
         kind = options.kind or "top"
-        if kind not in FEEDS:
-            raise SourceError("unknown_error", f"unknown HN feed '{kind}' (use: {', '.join(FEEDS)})")
+        if kind not in HN_FEEDS:
+            raise SourceError("unknown_error", f"unknown HN feed '{kind}' (use: {', '.join(HN_FEEDS)})")
         async with make_client() as client:
-            ids = await get_json(client, f"{BASE}/{FEEDS[kind]}.json")
+            ids = await get_json(client, f"{HN_BASE}/{HN_FEEDS[kind]}.json")
             if not isinstance(ids, list):
                 raise SourceError("parse_error", "unexpected HN id list")
-            sem = asyncio.Semaphore(8)
+            sem = asyncio.Semaphore(HN_FETCH_CONCURRENCY)
 
             async def item(i: int):
                 async with sem:
                     try:
-                        return await get_json(client, f"{BASE}/item/{i}.json")
+                        return await get_json(client, f"{HN_BASE}/item/{i}.json")
                     except SourceError:
                         return None
 
             # over-fetch a little: deleted/dead/non-story items get dropped
-            items = await asyncio.gather(*(item(i) for i in ids[: options.limit + 10]))
+            items = await asyncio.gather(*(item(i) for i in ids[: options.limit + HN_OVERFETCH]))
         drafts = [d for it in items if (d := self._normalize(it, kind))]
         return drafts[: options.limit]
 

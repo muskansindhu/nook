@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from nook.adapters.registry import build_adapters
 from nook.config import Config, load_config
+from nook.constants import SYNC_UNBOUNDED_LIMIT
 from nook.db import Database
 from nook.extraction import ExtractionError, extract_url, sanitize
 from nook.models import FeedOptions, SourceError
@@ -70,7 +71,7 @@ class Nook:
                 on_result(r)
         if not metadata_only:
             # newly discovered articles only, bounded; --download-content widens to everything missing
-            rows = self.db.list(limit=10_000, missing_content=True, dedupe=False)
+            rows = self.db.list(limit=SYNC_UNBOUNDED_LIMIT, missing_content=True, dedupe=False)
             rows = [r for r in rows if r["source_id"] in sids]
             cap = len(rows) if download_missing else self.cfg.max_auto_download
             by_src = {r.source_id: r for r in results}

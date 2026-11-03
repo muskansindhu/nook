@@ -7,56 +7,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from nook.constants import ARTICLE_VIEW_SELECT, SCHEMA, SOURCE_NAMES
 from nook.models import ArticleDraft
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS sources (
-  id TEXT PRIMARY KEY, name TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1,
-  last_synced_at TEXT, last_error TEXT, status TEXT NOT NULL DEFAULT 'enabled'
-);
-CREATE TABLE IF NOT EXISTS articles (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  source_id TEXT NOT NULL REFERENCES sources(id),
-  external_id TEXT, canonical_url TEXT NOT NULL, title TEXT NOT NULL,
-  author TEXT, description TEXT, published_at TEXT, fetched_at TEXT NOT NULL,
-  tags_json TEXT NOT NULL DEFAULT '[]', score INTEGER, comment_count INTEGER,
-  reading_time_minutes INTEGER, content_markdown TEXT, content_text TEXT,
-  content_status TEXT NOT NULL DEFAULT 'pending', content_error TEXT,
-  content_fetched_at TEXT, source_metadata_json TEXT NOT NULL DEFAULT '{}',
-  created_at TEXT NOT NULL, updated_at TEXT NOT NULL
-);
-CREATE UNIQUE INDEX IF NOT EXISTS ux_art_ext ON articles(source_id, external_id) WHERE external_id IS NOT NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS ux_art_url ON articles(source_id, canonical_url);
-CREATE INDEX IF NOT EXISTS ix_art_pub ON articles(source_id, published_at);
-CREATE INDEX IF NOT EXISTS ix_art_status ON articles(content_status);
-CREATE TABLE IF NOT EXISTS user_article_state (
-  article_id INTEGER PRIMARY KEY REFERENCES articles(id) ON DELETE CASCADE,
-  is_bookmarked INTEGER NOT NULL DEFAULT 0, is_read INTEGER NOT NULL DEFAULT 0,
-  read_progress REAL NOT NULL DEFAULT 0, first_opened_at TEXT, last_opened_at TEXT,
-  updated_at TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS ix_state_bm ON user_article_state(is_bookmarked);
-CREATE INDEX IF NOT EXISTS ix_state_read ON user_article_state(is_read);
-CREATE INDEX IF NOT EXISTS ix_state_last ON user_article_state(last_opened_at);
-CREATE TABLE IF NOT EXISTS sync_runs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT, source_id TEXT NOT NULL, started_at TEXT NOT NULL,
-  finished_at TEXT, status TEXT NOT NULL, fetched_count INTEGER DEFAULT 0,
-  inserted_count INTEGER DEFAULT 0, updated_count INTEGER DEFAULT 0, error_message TEXT
-);
-"""
 
-SOURCE_NAMES = {
-    "hn": "Hacker News",
-    "tdd": "The Daily Diff",
-    "devto": "DEV Community",
-    "dailydev": "daily.dev",
-}
-
-_VIEW_SELECT = """
-SELECT a.*, COALESCE(s.is_bookmarked,0) AS is_bookmarked, COALESCE(s.is_read,0) AS is_read,
-       COALESCE(s.read_progress,0) AS read_progress, s.last_opened_at AS last_opened_at
-FROM articles a LEFT JOIN user_article_state s ON s.article_id = a.id
-"""
 
 
 def now() -> str:
@@ -197,7 +151,7 @@ class Database:
         )
 
     def get(self, aid: int) -> sqlite3.Row | None:
-        return self.conn.execute(_VIEW_SELECT + " WHERE a.id=?", (aid,)).fetchone()
+        return self.conn.execute(ARTICLE_VIEW_SELECT + " WHERE a.id=?", (aid,)).fetchone()
 
     def list(
         self, source: str | None = None, limit: int = 30, offset: int = 0, unread: bool = False,
@@ -224,7 +178,7 @@ class Database:
         }[sort]
         if history:
             order = "s.last_opened_at DESC"
-        sql = _VIEW_SELECT + (" WHERE " + " AND ".join(where) if where else "")
+        sql = ARTICLE_VIEW_SELECT + (" WHERE " + " AND ".join(where) if where else "")
         sql += f" ORDER BY {order}, a.id DESC LIMIT ? OFFSET ?"
         return self.conn.execute(sql, (*args, limit, offset)).fetchall()
 
@@ -242,11 +196,11 @@ class Database:
             terms = " ".join(f'"{t}"' for t in re.findall(r"\w+", q))
             if not terms:
                 return []
-            sql = (_VIEW_SELECT + " WHERE a.id IN (SELECT rowid FROM articles_fts WHERE articles_fts MATCH ?)"
+            sql = (ARTICLE_VIEW_SELECT + " WHERE a.id IN (SELECT rowid FROM articles_fts WHERE articles_fts MATCH ?)"
                    + extra + " ORDER BY COALESCE(a.published_at,a.fetched_at) DESC LIMIT ?")
             return self.conn.execute(sql, (terms, *args, limit)).fetchall()
         like = f"%{q}%"
-        sql = (_VIEW_SELECT + " WHERE (a.title LIKE ? OR a.description LIKE ? OR a.content_text LIKE ?)"
+        sql = (ARTICLE_VIEW_SELECT + " WHERE (a.title LIKE ? OR a.description LIKE ? OR a.content_text LIKE ?)"
                + extra + " ORDER BY COALESCE(a.published_at,a.fetched_at) DESC LIMIT ?")
         return self.conn.execute(sql, (like, like, like, *args, limit)).fetchall()
 

@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 from rich.markup import escape
 from rich.table import Table
 
-SRC_LABEL = {"hn": "HN", "tdd": "TDD", "devto": "DEV", "dailydev": "daily.dev"}
+from nook.constants import SOURCE_LABELS
+
 
 
 def rel_time(iso: str | None) -> str:
@@ -25,7 +26,7 @@ def rel_time(iso: str | None) -> str:
 
 
 def meta_line(a: sqlite3.Row) -> str:
-    bits = [SRC_LABEL.get(a["source_id"], a["source_id"])]
+    bits = [SOURCE_LABELS.get(a["source_id"], a["source_id"])]
     if a["author"]:
         bits.append(a["author"])
     bits.append(rel_time(a["published_at"] or a["fetched_at"]))

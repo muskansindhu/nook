@@ -4,10 +4,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from nook.adapters.base import get_json, make_client
+from nook.constants import TDD_FEED_URL
 from nook.models import ArticleDraft, FeedOptions, SourceError
 from nook.urls import normalize_url
 
-FEED_URL = "https://tdd.cat/json"
 
 
 class DailyDiff:
@@ -16,7 +16,7 @@ class DailyDiff:
 
     async def fetch_feed(self, options: FeedOptions) -> list[ArticleDraft]:
         async with make_client() as client:
-            data = await get_json(client, FEED_URL)
+            data = await get_json(client, TDD_FEED_URL)
         if not isinstance(data, dict) or not isinstance(data.get("stories"), list):
             raise SourceError("parse_error", "tdd.cat feed shape changed (no 'stories' list)")
         out = []

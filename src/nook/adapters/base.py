@@ -5,11 +5,8 @@ from typing import Protocol
 
 import httpx
 
-from nook import __version__
-from nook.models import ArticleDraft, FeedOptions, SourceError, SourceHealth
-
-USER_AGENT = f"nook/{__version__} (personal terminal reader)"
-TIMEOUT = httpx.Timeout(15.0, connect=8.0)
+from nook.constants import HTTP_CONNECT_TIMEOUT_S, HTTP_TIMEOUT_S, USER_AGENT
+from nook.models import ArticleDraft, FeedOptions, SourceError
 
 
 class SourceAdapter(Protocol):
@@ -25,7 +22,7 @@ class SourceAdapter(Protocol):
 
 def make_client(**kw) -> httpx.AsyncClient:
     headers = {"User-Agent": USER_AGENT, **kw.pop("headers", {})}
-    return httpx.AsyncClient(timeout=TIMEOUT, headers=headers, follow_redirects=True, **kw)
+    return httpx.AsyncClient(timeout=httpx.Timeout(HTTP_TIMEOUT_S, connect=HTTP_CONNECT_TIMEOUT_S), headers=headers, follow_redirects=True, **kw)
 
 
 def parse_dt(value: str | None) -> datetime | None:

@@ -7,27 +7,10 @@ from pathlib import Path
 
 from platformdirs import user_config_dir, user_data_dir
 
-SOURCE_IDS = ("hn", "tdd", "devto", "dailydev")
+from nook.constants import (
+    APP_NAME, DEFAULT_LIMIT, DEFAULT_MAX_AUTO_DOWNLOAD, DEFAULT_MAX_CONCURRENT_DOWNLOADS, SOURCE_IDS,
+)
 
-DEFAULT_TOML = """\
-[app]
-default_limit = 30
-auto_mark_read = true
-
-[cache]
-max_auto_download_per_sync = 25
-max_concurrent_downloads = 4
-
-[sources.hn]
-enabled = true
-[sources.tdd]
-enabled = true
-[sources.devto]
-enabled = true
-[sources.dailydev]
-enabled = true
-# Token comes from the DAILY_DEV_TOKEN environment variable, never this file.
-"""
 
 
 class ConfigError(Exception):
@@ -35,20 +18,20 @@ class ConfigError(Exception):
 
 
 def config_path() -> Path:
-    return Path(os.environ.get("NOOK_CONFIG", Path(user_config_dir("nook")) / "config.toml"))
+    return Path(os.environ.get("NOOK_CONFIG", Path(user_config_dir(APP_NAME)) / "config.toml"))
 
 
 def default_db_path() -> Path:
-    return Path(user_data_dir("nook")) / "nook.db"
+    return Path(user_data_dir(APP_NAME)) / "nook.db"
 
 
 @dataclass
 class Config:
     db_path: Path = field(default_factory=default_db_path)
-    default_limit: int = 30
+    default_limit: int = DEFAULT_LIMIT
     auto_mark_read: bool = True
-    max_auto_download: int = 25
-    max_concurrent_downloads: int = 4
+    max_auto_download: int = DEFAULT_MAX_AUTO_DOWNLOAD
+    max_concurrent_downloads: int = DEFAULT_MAX_CONCURRENT_DOWNLOADS
     enabled: dict[str, bool] = field(default_factory=lambda: {s: True for s in SOURCE_IDS})
 
     @property
