@@ -6,10 +6,13 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen, Screen
+from textual.theme import Theme
 from textual.widgets import Footer, Header, Input, Markdown, OptionList, Static
 from textual.widgets.option_list import Option
 
-from nook.constants import MASCOT_TAGLINE, MASCOT_TITLE, TUI_PAGE_SIZE, TUI_VIEWS
+from nook.constants import (
+    MASCOT_TAGLINE, MASCOT_TITLE, THEME_COLORS, THEME_NAME, THEME_VARIABLES, TUI_PAGE_SIZE, TUI_VIEWS,
+)
 from nook.fmt import flags, meta_line, render_mascot
 from nook.service import Nook
 
@@ -192,6 +195,10 @@ class NookApp(App, ListNav):
         self.nook = nook
         self.view = "all"
 
+    def _apply_theme(self) -> None:
+        self.register_theme(Theme(name=THEME_NAME, dark=True, variables=THEME_VARIABLES, **THEME_COLORS))
+        self.theme = THEME_NAME
+
     def compose(self) -> ComposeResult:
         yield Header()
         with Horizontal():
@@ -202,6 +209,7 @@ class NookApp(App, ListNav):
         yield Footer()
 
     def on_mount(self) -> None:
+        self._apply_theme()
         self.query_one("#views", OptionList).highlighted = 0
         self.load_articles()
         self.query_one("#articles").focus()

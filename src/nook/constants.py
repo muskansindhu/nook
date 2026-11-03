@@ -153,3 +153,24 @@ MASCOT_PIXELS = [
 ]
 MASCOT_TITLE = "nook"
 MASCOT_TAGLINE = "your cozy reading nook"
+
+# ---- TUI theme (derived from the mascot palette) -----------------------------
+THEME_NAME = "nook"
+THEME_COLORS = {
+    "primary": MASCOT_PALETTE["d"],  # leaf green: focus borders, highlights
+    "secondary": MASCOT_PALETTE["g"],  # light green
+    "accent": MASCOT_PALETTE["b"],  # book-cover amber: footer keys, links
+    "foreground": MASCOT_PALETTE["c"],  # page cream
+    "background": "#14181a",
+    "surface": "#1b2124",
+    "panel": "#222a2e",
+    "success": MASCOT_PALETTE["g"],
+    "warning": "#e8a857",
+    "error": "#ff7b8f",
+}
+THEME_VARIABLES = {
+    "block-cursor-background": MASCOT_PALETTE["d"],
+    "block-cursor-foreground": "#0f1512",
+    "block-cursor-text-style": "bold",
+    "footer-key-foreground": MASCOT_PALETTE["b"],
+}
