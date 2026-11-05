@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import webbrowser
+
 from rich.text import Text
 from textual import work
 from textual.app import App, ComposeResult
@@ -45,11 +47,42 @@ class ReaderScreen(Screen):
         Binding("k,up", "scroll(-1)", "Up", show=False), Binding("space,pagedown", "page(1)", "Page ↓", show=False),
         Binding("pageup", "page(-1)", "Page ↑", show=False), Binding("g", "top", "Top", show=False),
         Binding("G", "bottom", "Bottom", show=False), Binding("R", "retry", "Retry download"),
+        Binding("n", "step(1)", "Next"), Binding("p", "step(-1)", "Previous"),
+        Binding("o", "open_browser", "Open in browser"),
     ]
 
-    def __init__(self, nook: Nook, aid: int):
+    def __init__(self, nook: Nook, aid: int, ids: list[int] | None = None):
         super().__init__()
         self.nook, self.aid = nook, aid
+        self.ids = ids or [aid]
+
+    def _save_progress(self) -> None:
+        body = self.query_one("#body", VerticalScroll)
+        if body.max_scroll_y:
+            self.nook.db.set_progress(self.aid, body.scroll_y / body.max_scroll_y)
+
+    def action_step(self, n: int) -> None:
+        i = self.ids.index(self.aid) + n if self.aid in self.ids else -1
+        if not 0 <= i < len(self.ids):
+            self.notify("No more articles" if self.aid in self.ids else "No article list", timeout=2)
+            return
+        self._save_progress()
+        self.aid = self.ids[i]
+        self.app.mark_opened(self.aid)
+        self.app.select_in_list(self.aid)
+        self.render_article()
+        self.query_one("#body").scroll_home(animate=False)
+        if not self.nook.db.get(self.aid)["content_markdown"]:
+            self.download()
+        else:
+            self.call_after_refresh(self._restore)
+
+    def action_open_browser(self) -> None:
+        url = self.nook.db.get(self.aid)["canonical_url"] or ""
+        if url.startswith(("http://", "https://")) and webbrowser.open(url):
+            self.notify("Opened in browser", timeout=2)
+        else:
+            self.notify("Could not open a browser", severity="warning")
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -116,9 +149,7 @@ class ReaderScreen(Screen):
         self.notify("Marked unread" if a["is_read"] else "Marked read")
 
     def action_back(self) -> None:
-        body = self.query_one("#body", VerticalScroll)
-        if body.max_scroll_y:
-            self.nook.db.set_progress(self.aid, body.scroll_y / body.max_scroll_y)
+        self._save_progress()
         self.app.pop_screen()
 
 
@@ -161,6 +192,8 @@ class HelpScreen(ModalScreen):
             "Enter     open          Esc   back\n"
             "Tab       switch pane   /     search (offline)\n"
             "b         bookmark      m     mark read/unread\n"
+            "n / p     next / previous article (reader)\n"
+            "o         open in browser (reader)\n"
             "r         refresh feed  R     retry download (reader)\n"
             "q         quit / back   ?     this help\n\n"
             "Flags: ★ bookmarked  ✓ read  • unread  ▣ cached  ▢ not downloaded",
@@ -249,11 +282,25 @@ class NookApp(App, ListNav):
         elif e.option_list.id == "views":
             self.query_one("#articles").focus()
 
-    def open_article(self, aid: int) -> None:
+    def mark_opened(self, aid: int) -> None:
         self.nook.db.touch_opened(aid)
         if self.nook.cfg.auto_mark_read:
             self.nook.db.set_read(aid, True)
-        self.push_screen(ReaderScreen(self.nook, aid), lambda _: self.load_articles(keep=True))
+
+    def _list_ids(self) -> list[int]:
+        ol = self.screen_stack[0].query_one("#articles", OptionList)
+        return [int(o.id) for o in ol.options if o.id]
+
+    def select_in_list(self, aid: int) -> None:
+        ol = self.screen_stack[0].query_one("#articles", OptionList)
+        for i, o in enumerate(ol.options):
+            if o.id == str(aid):
+                ol.highlighted = i
+                return
+
+    def open_article(self, aid: int) -> None:
+        self.mark_opened(aid)
+        self.push_screen(ReaderScreen(self.nook, aid, self._list_ids()), lambda _: self.load_articles(keep=True))
 
     def _current_id(self) -> int | None:
         ol = self.query_one("#articles", OptionList)

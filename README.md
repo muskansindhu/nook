@@ -18,7 +18,7 @@ CLI: `nook feed [hn|tdd|devto|dailydev]`, `read ID`, `bookmark ID`, `bookmarks`,
 IDs are **local nook IDs**. Optional: `export DAILY_DEV_TOKEN=...` to enable daily.dev.
 
 TUI keys: `j/k` move · `Enter` open · `Esc` back · `/` search · `b` bookmark · `m` read/unread ·
-`r` sync · `R` retry download · `Tab` switch pane · `?` help · `q` quit.
+`r` sync · `n`/`p` next/previous article (reader) · `o` open in browser · `R` retry download · `Tab` switch pane · `?` help · `q` quit.
 
 ## Sources
 - **hn** – official Firebase API (top/new/best/ask/show); body extracted from the linked page.

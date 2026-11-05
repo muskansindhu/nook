@@ -28,3 +28,33 @@ async def test_mascot_stays_visible(nook):
         await pilot.pause(2.5)  # long after any would-be splash timeout
         brand = app.query_one("#brand", Static)
         assert brand.region.height > 0 and "nook" in str(brand.render())
+
+
+async def test_reader_next_prev_and_browser(nook, monkeypatch):
+    import webbrowser
+
+    opened = []
+    monkeypatch.setattr(webbrowser, "open", lambda u: opened.append(u) or True)
+    for i in range(3):
+        a, _ = nook.db.upsert(ArticleDraft("hn", f"https://a.com/{i}", f"Title {i}", external_id=str(i)))
+        nook.db.save_content(a, f"# Body {i}\n\ntext " * 30)
+    app = NookApp(nook)
+    async with app.run_test() as pilot:
+        await pilot.press("enter")
+        await pilot.pause()
+        first = app.screen.aid
+        await pilot.press("n")
+        await pilot.pause()
+        second = app.screen.aid
+        assert second != first
+        await pilot.press("p")
+        await pilot.pause()
+        assert app.screen.aid == first
+        await pilot.press("p")  # already at the top: stays put
+        await pilot.pause()
+        assert app.screen.aid == first
+        await pilot.press("o")
+        assert opened and opened[0].startswith("https://a.com/")
+        await pilot.press("escape")
+        await pilot.pause()
+        assert nook.db.get(second)["is_read"]  # stepping counts as opening
