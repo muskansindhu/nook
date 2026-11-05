@@ -4,7 +4,7 @@ from nook.tui import NookApp, ReaderScreen
 
 async def test_navigate_open_bookmark_back(nook):
     for i in range(3):
-        a, _ = nook.db.upsert(ArticleDraft("hn", f"https://a.com/{i}", f"Title {i}", external_id=str(i)))
+        a, _ = nook.db.upsert(ArticleDraft(source_id="hn", canonical_url=f"https://a.com/{i}", title=f"Title {i}", external_id=str(i)))
         nook.db.save_content(a, f"# Body {i}\n\ntext " * 30)
     app = NookApp(nook)
     async with app.run_test() as pilot:
@@ -36,7 +36,7 @@ async def test_reader_next_prev_and_browser(nook, monkeypatch):
     opened = []
     monkeypatch.setattr(webbrowser, "open", lambda u: opened.append(u) or True)
     for i in range(3):
-        a, _ = nook.db.upsert(ArticleDraft("hn", f"https://a.com/{i}", f"Title {i}", external_id=str(i)))
+        a, _ = nook.db.upsert(ArticleDraft(source_id="hn", canonical_url=f"https://a.com/{i}", title=f"Title {i}", external_id=str(i)))
         nook.db.save_content(a, f"# Body {i}\n\ntext " * 30)
     app = NookApp(nook)
     async with app.run_test() as pilot:

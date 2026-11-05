@@ -4,6 +4,8 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 
+from pydantic import BaseModel
+
 from nook.adapters.registry import build_adapters
 from nook.config import Config, load_config
 from nook.constants import SYNC_UNBOUNDED_LIMIT
@@ -12,8 +14,7 @@ from nook.extraction import ExtractionError, extract_url, sanitize
 from nook.models import FeedOptions, SourceError
 
 
-@dataclass
-class SyncResult:
+class SyncResult(BaseModel):
     source_id: str
     status: str = "success"
     fetched: int = 0
@@ -35,7 +36,7 @@ class Nook:
     async def sync_source(self, sid: str, limit: int, kind: str | None = None, tag: str | None = None) -> SyncResult:
         from nook.db import now
 
-        res, started = SyncResult(sid), now()
+        res, started = SyncResult(source_id=sid), now()
         adapter = self.adapters.get(sid)
         if adapter is None:
             res.status, res.error = "failed", "source disabled"

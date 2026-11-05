@@ -28,7 +28,7 @@ TUI keys: `j/k` move · `Enter` open · `Esc` back · `/` search · `b` bookmark
 
 ## POC scope / deviations from the spec
 - Plain `sqlite3` (+ FTS5, LIKE fallback) instead of SQLAlchemy/Alembic; schema is created idempotently, no migrations yet.
-- Dataclasses instead of Pydantic. `venv` + pip instead of `uv`.
+- `venv` + pip instead of `uv`. Pydantic models for articles, feed options and config; malformed API items are skipped, not fatal.
 - TDD feed only exposes the latest edition; no retry/backoff or `Retry-After` handling yet (errors map to source statuses).
 - Cross-source dedupe is by exact canonical URL in the unified feed; per-source rows are kept.
 - Tests: `pytest` (adapters mocked with respx, storage, offline-safety, TUI navigation).

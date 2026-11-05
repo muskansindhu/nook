@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import os
 import tomllib
-from dataclasses import dataclass, field
 from pathlib import Path
 
 from platformdirs import user_config_dir, user_data_dir
+from pydantic import BaseModel, ConfigDict, Field
 
 from nook.constants import (
     APP_NAME, DEFAULT_LIMIT, DEFAULT_MAX_AUTO_DOWNLOAD, DEFAULT_MAX_CONCURRENT_DOWNLOADS, SOURCE_IDS,
@@ -25,14 +25,15 @@ def default_db_path() -> Path:
     return Path(user_data_dir(APP_NAME)) / "nook.db"
 
 
-@dataclass
-class Config:
-    db_path: Path = field(default_factory=default_db_path)
+class Config(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+
+    db_path: Path = Field(default_factory=default_db_path)
     default_limit: int = DEFAULT_LIMIT
     auto_mark_read: bool = True
     max_auto_download: int = DEFAULT_MAX_AUTO_DOWNLOAD
     max_concurrent_downloads: int = DEFAULT_MAX_CONCURRENT_DOWNLOADS
-    enabled: dict[str, bool] = field(default_factory=lambda: {s: True for s in SOURCE_IDS})
+    enabled: dict[str, bool] = Field(default_factory=lambda: {s: True for s in SOURCE_IDS})
 
     @property
     def daily_dev_token(self) -> str | None:

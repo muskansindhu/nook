@@ -15,7 +15,7 @@ JS_SHELL = (
 async def test_js_only_page_keeps_summary_and_links_discussion(nook):
     respx.get("https://js.example.com/").respond(text=JS_SHELL, headers={"content-type": "text/html"})
     aid, _ = nook.db.upsert(ArticleDraft(
-        "hn", "https://js.example.com", "Show HN: x", external_id="1",
+        source_id="hn", canonical_url="https://js.example.com", title="Show HN: x", external_id="1",
         metadata={"hn_url": "https://news.ycombinator.com/item?id=1"},
     ))
     status, _ = await nook.ensure_content(aid)

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from nook.adapters.base import get_json, make_client
+from nook.adapters.base import get_json, make_client, safe_normalize
 from nook.constants import TDD_FEED_URL
 from nook.models import ArticleDraft, FeedOptions, SourceError
 from nook.urls import normalize_url
@@ -21,7 +21,7 @@ class DailyDiff:
             raise SourceError("parse_error", "tdd.cat feed shape changed (no 'stories' list)")
         out = []
         for s in data["stories"]:
-            d = self._normalize(s, data.get("date"))
+            d = safe_normalize(self._normalize, s, data.get("date"))
             if d:
                 out.append(d)
         return out[: options.limit]

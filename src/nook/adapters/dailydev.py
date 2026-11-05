@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from nook.adapters.base import get_json, make_client, parse_dt
+from nook.adapters.base import get_json, make_client, parse_dt, safe_normalize
 from nook.constants import DAILYDEV_BASE, DAILYDEV_MAX_PAGE
 from nook.models import ArticleDraft, FeedOptions, SourceError
 from nook.urls import normalize_url
@@ -28,7 +28,7 @@ class DailyDev:
                 if not isinstance(data, dict) or not isinstance(data.get("data"), list):
                     raise SourceError("parse_error", "unexpected daily.dev response shape")
                 for p in data["data"]:
-                    d = self._normalize(p)
+                    d = safe_normalize(self._normalize, p)
                     if d:
                         out.append(d)
                 page = data.get("pagination") or {}

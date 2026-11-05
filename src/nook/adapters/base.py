@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Protocol
+from typing import Callable, Protocol
 
 import httpx
 
@@ -23,6 +23,14 @@ class SourceAdapter(Protocol):
 def make_client(**kw) -> httpx.AsyncClient:
     headers = {"User-Agent": USER_AGENT, **kw.pop("headers", {})}
     return httpx.AsyncClient(timeout=httpx.Timeout(HTTP_TIMEOUT_S, connect=HTTP_CONNECT_TIMEOUT_S), headers=headers, follow_redirects=True, **kw)
+
+
+def safe_normalize(fn: Callable[..., ArticleDraft | None], *args) -> ArticleDraft | None:
+    """Run an adapter's normalizer; skip malformed items (incl. pydantic ValidationError) instead of failing the source."""
+    try:
+        return fn(*args)
+    except (KeyError, TypeError, ValueError):
+        return None
 
 
 def parse_dt(value: str | None) -> datetime | None:

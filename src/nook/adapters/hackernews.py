@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
 
-from nook.adapters.base import get_json, make_client
+from nook.adapters.base import get_json, make_client, safe_normalize
 from nook.constants import HN_BASE, HN_FEEDS, HN_FETCH_CONCURRENCY, HN_OVERFETCH
 from nook.extraction import html_fragment_to_markdown
 from nook.models import ArticleDraft, FeedOptions, SourceError
@@ -33,7 +33,7 @@ class HackerNews:
 
             # over-fetch a little: deleted/dead/non-story items get dropped
             items = await asyncio.gather(*(item(i) for i in ids[: options.limit + HN_OVERFETCH]))
-        drafts = [d for it in items if (d := self._normalize(it, kind))]
+        drafts = [d for it in items if (d := safe_normalize(self._normalize, it, kind))]
         return drafts[: options.limit]
 
     @staticmethod

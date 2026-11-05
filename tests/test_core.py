@@ -98,3 +98,14 @@ async def test_source_failure_does_not_break_others(nook):
     st = {r.source_id: r.status for r in res}
     assert st == {"tdd": "failed", "devto": "success"}
     assert len(nook.db.list("devto")) == 1
+
+
+@respx.mock
+async def test_malformed_item_is_skipped_not_fatal():
+    respx.get(url__regex=r"https://hacker-news\.firebaseio\.com/v0/\w+stories\.json").respond(json=[1, 2])
+    respx.get("https://hacker-news.firebaseio.com/v0/item/1.json").respond(
+        json={"id": 1, "type": "story", "title": "Good", "url": "https://ok.com/a", "by": "x"})
+    respx.get("https://hacker-news.firebaseio.com/v0/item/2.json").respond(
+        json={"id": 2, "type": "story", "title": "Bad", "url": "https://ok.com/b", "by": {"not": "a string"}})
+    out = await HackerNews().fetch_feed(FeedOptions(limit=10))
+    assert [d.title for d in out] == ["Good"]

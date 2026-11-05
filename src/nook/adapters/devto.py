@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from nook.adapters.base import get_json, make_client, parse_dt
+from nook.adapters.base import get_json, make_client, parse_dt, safe_normalize
 from nook.constants import DEVTO_BASE, DEVTO_HEADERS, DEVTO_MAX_PER_PAGE, DEVTO_TOP_DAYS
 from nook.models import ArticleDraft, FeedOptions, SourceError
 from nook.urls import normalize_url
@@ -29,10 +29,8 @@ class DevTo:
             raise SourceError("parse_error", "unexpected DEV response")
         out = []
         for a in data:
-            try:
-                out.append(self._normalize(a))
-            except (KeyError, TypeError):
-                continue  # skip malformed entries rather than failing the source
+            if d := safe_normalize(self._normalize, a):
+                out.append(d)
         return out
 
     @staticmethod
