@@ -1,7 +1,7 @@
 # nook
 
 Local-first, terminal-native reader for developer articles (Hacker News, The Daily Diff, DEV, daily.dev).
-This is a proof of concept built from `readr_build_spec.md` (readr → nook).
+This is a proof of concept built from the original build spec.
 
 ## Run
 
